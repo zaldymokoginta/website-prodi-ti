@@ -1,5 +1,7 @@
 <?php
 
+use App\Http\Controllers\Admin\BeritaController as AdminBeritaController;
+use App\Http\Controllers\Admin\MataKuliahController as AdminMataKuliahController;
 use App\Http\Controllers\Admin\DashboardController as AdminDashboardController;
 use App\Http\Controllers\Admin\DosenController as AdminDosenController;
 use App\Http\Controllers\AuthController;
@@ -31,4 +33,8 @@ Route::post('/logout', [AuthController::class, 'logout'])
 Route::middleware('auth')->prefix('admin')->name('admin.')->group(function () {
     Route::get('/', [AdminDashboardController::class, 'index'])->name('dashboard');
     Route::resource('dosen', AdminDosenController::class)->except('show');
+    Route::resource('berita', AdminBeritaController::class)->except('show');
+    Route::resource('mata-kuliah', AdminMataKuliahController::class)
+        ->except('show')
+        ->parameters(['mata-kuliah' => 'mataKuliah']);
 });

@@ -10,6 +10,7 @@ class BerandaController extends Controller
 {
     public function index()
     {
+        
         $beritaTerbaru = Berita::whereNotNull('published_at')
             ->latest('published_at')
             ->take(3)
@@ -17,7 +18,9 @@ class BerandaController extends Controller
 
         $dosen = Dosen::take(4)->get();
         $totalMatkul = MataKuliah::count();
+        $kaprodi = Dosen::where('jabatan', 'like', '%Ketua Program Studi%')->first();
 
-        return view('beranda', compact('beritaTerbaru', 'dosen', 'totalMatkul'));
+        return view('beranda', compact('beritaTerbaru', 'dosen', 'totalMatkul', 'kaprodi'));
+
     }
 }

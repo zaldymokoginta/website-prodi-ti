@@ -6,6 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>@yield('title', 'Teknik Informatika')</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    @stack('styles')
 </head>
 
 <body class="d-flex flex-column min-vh-100">
@@ -35,7 +36,11 @@
 
     <footer class="bg-dark text-white text-center py-3 mt-5">
         &copy; {{ date('Y') }} Program Studi Teknik Informatika
+        @auth
+        &bull; <a href="{{ route('admin.dashboard') }}" class="text-white-50 small">Dashboard Admin</a>
+        @else
         &bull; <a href="{{ route('login') }}" class="text-white-50 small">Login Admin</a>
+        @endauth
     </footer>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>

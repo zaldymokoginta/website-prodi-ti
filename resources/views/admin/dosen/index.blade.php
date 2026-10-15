@@ -25,8 +25,8 @@
                 <tr>
                     <td>
                         @if ($d->foto)
-                        <img src="{{ asset('storage/' . $d->foto) }}" alt="{{ $d->nama }}" class="rounded-circle mb-2" width="96" height="96" style="object-fit: cover;">
-
+                        <img src="{{ asset('storage/' . $d->foto) }}" alt="{{ $d->nama }}" width="48" height="48" class="rounded-circle object-fit-cover">
+                        @else
                         <span class="text-muted small">-</span>
                         @endif
                     </td>
