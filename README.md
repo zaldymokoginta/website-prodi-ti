@@ -86,6 +86,25 @@ Buka `http://127.0.0.1:8000/login`
 | `database/seeders/`           | Data contoh dan akun admin          |
 | `resources/views/`            | Tampilan Blade (publik dan admin)   |
 
+## REST API dan Node.js
+
+Laravel menyediakan REST API berita (`/api/v1/...`) yang dilindungi token Sanctum.
+Folder `node-api/` berisi backend Node.js kedua yang menerima webhook dari Laravel.
+
+1. Tambahkan di `.env`:
+   ```
+   WEBHOOK_URL=http://127.0.0.1:3000/webhook/berita
+   WEBHOOK_SECRET=rahasia-webhook-123
+   ```
+2. Jalankan Node.js:
+   ```
+   cd node-api
+   npm install
+   npm start
+   ```
+3. Login API: `POST /api/v1/login` dengan akun admin demo, lalu kirim token lewat header `Authorization: Bearer <token>`.
+4. Halaman demo: login admin, lalu menu **Berita via API**.
+
 ## Pembuat
 
 Nama: Zaldy Alamsyah Mokoginta
