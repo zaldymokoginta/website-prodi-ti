@@ -2,29 +2,86 @@ const express = require('express');
 const cors = require('cors');
 
 const PORT = process.env.PORT || 3000;
-const API_KEY = process.env.API_KEY || 'prodi-demo-key-123';
 const WEBHOOK_SECRET = process.env.WEBHOOK_SECRET || 'rahasia-webhook-123';
 const LARAVEL_URL = process.env.LARAVEL_URL || 'http://127.0.0.1:8000';
+const MASA_CACHE = 10000; // hasil verifikasi token diingat 10 detik
 
 const app = express();
 app.use(cors());
 app.use(express.json());
 
 // "Database" sementara di memori. Hilang saat server dimatikan.
-const beritaStore = new Map(); // id -> data berita
-const notifikasi = [];         // daftar webhook yang diterima
+const beritaStore = new Map();
+const notifikasi = [];
 let nomorNotifikasi = 0;
+let sudahSinkron = false;
+const cacheToken = new Map();
 
-// Penjaga: hanya permintaan dengan API key yang benar yang lolos
-function apiKey(req, res, next) {
-  if (req.get('X-API-Key') !== API_KEY) {
-    return res.status(401).json({ message: 'API key tidak valid.' });
+// Tanya Laravel: token ini milik siapa? (null jika tidak valid)
+async function verifikasi(auth) {
+  const cache = cacheToken.get(auth);
+  if (cache && cache.exp > Date.now()) return cache.user;
+
+  const res = await fetch(`${LARAVEL_URL}/api/v1/me`, {
+    headers: { Accept: 'application/json', Authorization: auth },
+  });
+
+  if (res.status === 401) {
+    cacheToken.delete(auth);
+    return null;
   }
+  if (!res.ok) throw new Error('Laravel menjawab ' + res.status);
+
+  const user = (await res.json()).data;
+  cacheToken.set(auth, { user, exp: Date.now() + MASA_CACHE });
+  return user;
+}
+
+// Ambil data berita yang sudah ada di Laravel (sekali saja)
+async function sinkronAwal(auth) {
+  if (sudahSinkron) return;
+
+  try {
+    const res = await fetch(`${LARAVEL_URL}/api/v1/berita`, {
+      headers: { Accept: 'application/json', Authorization: auth },
+    });
+    if (!res.ok) throw new Error('status ' + res.status);
+
+    const json = await res.json();
+    json.data.forEach((b) => {
+      if (!beritaStore.has(b.id)) beritaStore.set(b.id, b);
+    });
+    sudahSinkron = true;
+    console.log(`Sinkron awal: ${json.data.length} berita dari Laravel.`);
+  } catch (e) {
+    console.log('Sinkron awal ditunda:', e.message);
+  }
+}
+
+// Penjaga: wajib header Authorization: Bearer <token>
+async function bearer(req, res, next) {
+  const auth = req.get('Authorization') || '';
+
+  if (!auth.startsWith('Bearer ')) {
+    return res.status(401).json({ message: 'Token tidak ditemukan.' });
+  }
+
+  try {
+    const user = await verifikasi(auth);
+    if (!user) {
+      return res.status(401).json({ message: 'Token tidak valid.' });
+    }
+    req.user = user;
+  } catch (e) {
+    return res.status(502).json({ message: 'Tidak dapat memverifikasi token ke Laravel.' });
+  }
+
+  await sinkronAwal(auth);
   next();
 }
 
 // GET /api/v1/statistik  (JSON sama persis dengan Laravel)
-app.get('/api/v1/statistik', apiKey, (req, res) => {
+app.get('/api/v1/statistik', bearer, (req, res) => {
   const semua = beritaStore.size;
   const terbit = [...beritaStore.values()].filter((b) => b.status === 'terbit').length;
 
@@ -32,7 +89,7 @@ app.get('/api/v1/statistik', apiKey, (req, res) => {
 });
 
 // GET /api/v1/berita?status=terbit|draft
-app.get('/api/v1/berita', apiKey, (req, res) => {
+app.get('/api/v1/berita', bearer, (req, res) => {
   const { status } = req.query;
 
   if (status && !['draft', 'terbit'].includes(status)) {
@@ -50,7 +107,7 @@ app.get('/api/v1/berita', apiKey, (req, res) => {
   res.json({ data });
 });
 
-// POST /webhook/berita  (dipanggil oleh Laravel)
+// POST /webhook/berita  (dipanggil Laravel, dijaga secret, bukan token)
 app.post('/webhook/berita', (req, res) => {
   if (req.get('X-Webhook-Secret') !== WEBHOOK_SECRET) {
     return res.status(401).json({ message: 'Secret webhook tidak valid.' });
@@ -79,32 +136,14 @@ app.post('/webhook/berita', (req, res) => {
 });
 
 // GET /api/v1/notifikasi
-app.get('/api/v1/notifikasi', apiKey, (req, res) => {
+app.get('/api/v1/notifikasi', bearer, (req, res) => {
   res.json({ data: notifikasi });
 });
 
-// Alamat yang tidak dikenal
 app.use((req, res) => {
   res.status(404).json({ message: 'Endpoint tidak ditemukan.' });
 });
 
-// Saat menyala, ambil data berita yang sudah ada dari Laravel
-async function sinkronAwal() {
-  try {
-    const res = await fetch(`${LARAVEL_URL}/api/v1/berita`, {
-      headers: { Accept: 'application/json', 'X-API-Key': API_KEY },
-    });
-    if (!res.ok) throw new Error('status ' + res.status);
-
-    const json = await res.json();
-    json.data.forEach((b) => beritaStore.set(b.id, b));
-    console.log(`Sinkron awal: ${json.data.length} berita dari Laravel.`);
-  } catch (e) {
-    console.log('Sinkron awal dilewati (Laravel belum jalan?):', e.message);
-  }
-}
-
 app.listen(PORT, () => {
   console.log(`Server Node.js berjalan di http://127.0.0.1:${PORT}`);
-  sinkronAwal();
 });

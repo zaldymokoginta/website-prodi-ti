@@ -39,4 +39,5 @@ Route::middleware('auth')->prefix('admin')->name('admin.')->group(function () {
     Route::resource('mata-kuliah', AdminMataKuliahController::class)
         ->except('show')
         ->parameters(['mata-kuliah' => 'mataKuliah']);
+    Route::view('/api-demo', 'admin.api-demo')->name('api-demo');
 });

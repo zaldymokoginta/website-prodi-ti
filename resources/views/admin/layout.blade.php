@@ -14,6 +14,7 @@
         <div class="container">
             <a class="navbar-brand" href="{{ route('admin.dashboard') }}">Admin Prodi</a>
             <ul class="navbar-nav me-auto">
+                <li class="nav-item"><a class="nav-link {{ request()->routeIs('admin.api-demo') ? 'active' : '' }}" href="{{ route('admin.api-demo') }}">Berita via API</a></li>
                 <li class="nav-item"><a class="nav-link {{ request()->routeIs('admin.dashboard') ? 'active' : '' }}" href="{{ route('admin.dashboard') }}">Dashboard</a></li>
                 <li class="nav-item"><a class="nav-link {{ request()->routeIs('admin.dosen.*') ? 'active' : '' }}" href="{{ route('admin.dosen.index') }}">Dosen</a></li>
                 <li class="nav-item"><a class="nav-link {{ request()->routeIs('admin.berita.*') ? 'active' : '' }}" href="{{ route('admin.berita.index') }}">Berita</a></li>
