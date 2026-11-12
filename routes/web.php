@@ -33,7 +33,9 @@ Route::post('/logout', [AuthController::class, 'logout'])
 Route::middleware('auth')->prefix('admin')->name('admin.')->group(function () {
     Route::get('/', [AdminDashboardController::class, 'index'])->name('dashboard');
     Route::resource('dosen', AdminDosenController::class)->except('show');
-    Route::resource('berita', AdminBeritaController::class)->except('show');
+    Route::resource('berita', AdminBeritaController::class)
+    ->except('show')
+    ->parameters(['berita' => 'berita']);
     Route::resource('mata-kuliah', AdminMataKuliahController::class)
         ->except('show')
         ->parameters(['mata-kuliah' => 'mataKuliah']);

@@ -35,4 +35,9 @@ return [
         ],
     ],
 
+    'prodi' => [
+    'api_key' => env('API_KEY'),
+    'webhook_url' => env('WEBHOOK_URL'),
+    ],
+
 ];
